@@ -1,6 +1,7 @@
 package gossie
 
 import (
+	"context"
 	"testing"
 )
 
@@ -12,7 +13,7 @@ func TestSchema(t *testing.T) {
 		t.Fatal("Error connecting to Cassandra:", err)
 	}
 
-	ksDef, _ := c.client.DescribeKeyspace(keyspace)
+	ksDef, _ := c.client.DescribeKeyspace(context.Background(), keyspace)
 
 	schema := newSchema(ksDef)
 	defer c.close()
