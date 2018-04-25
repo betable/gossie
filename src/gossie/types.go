@@ -706,6 +706,22 @@ func unpackComposite(composite []byte) [][]byte {
 	return components
 }
 
+func packTuple(component []byte) []byte {
+	r := make([]byte, 4)
+	enc.BigEndian.PutUint32(r, uint32(len(component)))
+	return append(r, component...)
+}
+
+func unpackTuple(tuple []byte) [][]byte {
+	components := make([][]byte, 0)
+	for len(tuple) > 0 {
+		l := enc.BigEndian.Uint32(tuple[:4])
+		components = append(components, tuple[4:4+l])
+		tuple = tuple[4+l:]
+	}
+	return components
+}
+
 func defaultType(t reflect.Type) TypeDesc {
 	switch t.Kind() {
 	case reflect.Bool:

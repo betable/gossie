@@ -74,6 +74,7 @@ var gossieTypes = map[string]GossieTypeBuilder{}
 func init() {
 	RegisterGossieType("json", &jsonType{})
 	RegisterGossieType("boolstring", &boolStringType{})
+	RegisterGossieTypeBuilder("tuple", tupleTypeBuilder)
 }
 
 // Register a custom GossieType to be used with the given "marshal" struct tag
