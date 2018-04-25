@@ -57,16 +57,31 @@ func (e *UnmarshalValueError) Error() string {
 	return fmt.Sprint("Error unmarshaling field ", e.Name, ":", e.Err)
 }
 
+// For more complex GossieType, they can register a builder function which
+// can inspect the StructField and prepare the GossieType for use.
+type GossieTypeBuilder func(reflect.StructField) GossieType
+
+func basicGossieTypeBuilder(gossieType GossieType) GossieTypeBuilder {
+	return func(reflect.StructField) GossieType {
+		return gossieType
+	}
+}
+
 // Allows you to specify `marshal:"json"` for example to use the jsonType GossieType
 // This makes it easier to use common custom encodings
-var gossieTypes = map[string]GossieType{
-	"json":       &jsonType{},
-	"boolstring": &boolStringType{},
+var gossieTypes = map[string]GossieTypeBuilder{}
+
+func init() {
+	RegisterGossieType("json", &jsonType{})
+	RegisterGossieType("boolstring", &boolStringType{})
 }
 
 // Register a custom GossieType to be used with the given "marshal" struct tag
 func RegisterGossieType(name string, gossieType GossieType) {
-	gossieTypes[name] = gossieType
+	RegisterGossieTypeBuilder(name, basicGossieTypeBuilder(gossieType))
+}
+func RegisterGossieTypeBuilder(name string, gossieTypeBuilder GossieTypeBuilder) {
+	gossieTypes[name] = gossieTypeBuilder
 }
 
 func newField(index int, sf reflect.StructField) (*field, error) {
@@ -86,7 +101,7 @@ func newField(index int, sf reflect.StructField) (*field, error) {
 	var gossieTypeArgs *string
 	if tagMarshal := sf.Tag.Get("marshal"); tagMarshal != "" {
 		parts := strings.SplitN(tagMarshal, ",", 2)
-		gossieType = gossieTypes[parts[0]]
+		gossieType = gossieTypes[parts[0]](sf)
 		if len(parts) > 1 {
 			gossieTypeArgs = &parts[1]
 		}
